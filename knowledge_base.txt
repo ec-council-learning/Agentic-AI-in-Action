@@ -1,0 +1,7 @@
+Alert ID: INC-2024-101. The IP address 185.199.110.153 has been identified in a phishing campaign targeting our finance department. The campaign uses emails with malicious attachments disguised as invoices. First seen: 2025-10-14.
+---
+CISA KEV Alert: A new vulnerability, CVE-2025-9876, is being actively exploited. It affects the 'SecureNet VPN' service and allows for remote code execution. We recommend immediate patching.
+---
+Threat Intel Report #TIR-567: The threat actor group 'ShadowClaw' is known to use the IP address 185.199.110.153 as part of their command-and-control (C2) infrastructure for their 'GhostNet' malware.
+---
+Runbook Procedure RB-042: For any alert involving lateral movement, analysts must first isolate the affected host from the network. Use the 'isolate-host.ps1' script. After isolation, proceed to analyze process logs for suspicious activity, especially related to PsExec or SMB beacons (T1021.002).

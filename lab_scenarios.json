@@ -1,0 +1,41 @@
+{
+  "default_full_pipeline": {
+    "description": "Start from scratch – Supervisor must trigger Recon → OSINT → Report.",
+    "target": "dvwa.local",
+    "scan_results": [],
+    "osint_data": [],
+    "report": ""
+  },
+  "recon_already_done": {
+    "description": "Recon completed earlier – Supervisor should start with OSINT.",
+    "target": "dvwa.local",
+    "scan_results": [
+      { "port": 80, "service": "http" },
+      { "port": 3306, "service": "mysql" }
+    ],
+    "osint_data": [],
+    "report": ""
+  },
+  "recon_and_osint_done": {
+    "description": "Recon + OSINT were done in a previous run – Supervisor should jump to Report or END.",
+    "target": "dvwa.local",
+    "scan_results": [
+      { "port": 80, "service": "http" }
+    ],
+    "osint_data": [
+      { "source": "Shodan", "info": "Internal training VM" }
+    ],
+    "report": ""
+  },
+  "report_already_exists": {
+    "description": "Everything is already done – Supervisor should immediately end.",
+    "target": "dvwa.local",
+    "scan_results": [
+      { "port": 80, "service": "http" }
+    ],
+    "osint_data": [
+      { "source": "Shodan", "info": "Internal training VM" }
+    ],
+    "report": "Pre-generated report for dvwa.local"
+  }
+}

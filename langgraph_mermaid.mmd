@@ -1,0 +1,120 @@
+graph TD
+    START([START]) --> INIT["Initialize GraphState<br/>━━━━━━━━━━━━━━━<br/>logs: empty list<br/>red_actions: empty list<br/>blue_alerts: empty list<br/>remaining_log_files: discovered files<br/>processed_logs: 0<br/>done: False"]
+    
+    INIT --> supervisor
+    
+    subgraph supervisor[" SUPERVISOR NODE "]
+        direction TB
+        S1["Read Current State<br/>━━━━━━━━━━━━━━━"]
+        S2{"Check Done Flag"}
+        S3{"Remaining<br/>Log Files?"}
+        S4{"Logs Present<br/>but No Red Actions?"}
+        S5{"Red Actions Present<br/>but No Blue Alerts?"}
+        S6["Set Decision:<br/>REPORT"]
+        
+        S1 --> S2
+        S2 -->|done=True| SDONE["Decision: DONE"]
+        S2 -->|done=False| S3
+        S3 -->|Yes| SINGEST["Decision: INGEST_LOGS"]
+        S3 -->|No| S4
+        S4 -->|Yes| SRED["Decision: RUN_RED"]
+        S4 -->|No| S5
+        S5 -->|Yes| SBLUE["Decision: RUN_BLUE"]
+        S5 -->|No| S6
+    end
+    
+    SINGEST --> ingest_logs
+    SRED --> red_agent
+    SBLUE --> blue_agent
+    S6 --> reporting
+    SDONE --> END
+    
+    subgraph ingest_logs[" INGEST LOGS NODE "]
+        direction TB
+        I1["Pop Next File from<br/>remaining_log_files"]
+        I2["Open & Read Log File"]
+        I3["Parse Lines<br/>strip newlines"]
+        I4["Extend state logs<br/>with new lines"]
+        I5["Increment processed_logs<br/>counter"]
+        I6["Update remaining_log_files"]
+        I7["Append to<br/>conversation_history"]
+        
+        I1 --> I2 --> I3 --> I4 --> I5 --> I6 --> I7
+    end
+    
+    ingest_logs --> BACK1["Return to Supervisor"]
+    BACK1 --> supervisor
+    
+    subgraph red_agent[" RED AGENT NODE "]
+        direction TB
+        R1["Read All Logs from State"]
+        R2["Define Attack Indicators<br/>━━━━━━━━━━━━━━━<br/>UNION SELECT, OR 1=1<br/>/admin, /phpmyadmin<br/>sqlmap, /wp-admin, etc."]
+        R3["Iterate Through Log Lines"]
+        R4{"Pattern Match<br/>Against Indicators?"}
+        R5["Create red_action Dict<br/>━━━━━━━━━━━━━━━<br/>source_log: line<br/>indicator: matched pattern<br/>description: inference"]
+        R6["Append to red_actions List"]
+        R7["Update State red_actions"]
+        R8["Log to conversation_history"]
+        
+        R1 --> R2 --> R3 --> R4
+        R4 -->|Match Found| R5 --> R6
+        R4 -->|No Match| R3
+        R6 --> R3
+        R3 --> R7 --> R8
+    end
+    
+    red_agent --> BACK2["Return to Supervisor"]
+    BACK2 --> supervisor
+    
+    subgraph blue_agent[" BLUE AGENT NODE "]
+        direction TB
+        B1["Read logs, red_actions,<br/>blue_alerts from State"]
+        B2["Iterate Through red_actions"]
+        B3{"Already Alerted<br/>on This Log?"}
+        B4["Classify Severity<br/>━━━━━━━━━━━━━━━<br/>SQL Injection → HIGH<br/>Admin Probe → MEDIUM<br/>Scanner → HIGH<br/>Other → LOW"]
+        B5["Create blue_alert Dict<br/>━━━━━━━━━━━━━━━<br/>source_log, indicator<br/>severity, category<br/>description"]
+        B6["Append to blue_alerts"]
+        B7["Update State blue_alerts"]
+        B8["Log to conversation_history"]
+        
+        B1 --> B2 --> B3
+        B3 -->|Yes, Skip| B2
+        B3 -->|No| B4 --> B5 --> B6 --> B2
+        B2 --> B7 --> B8
+    end
+    
+    blue_agent --> BACK3["Return to Supervisor"]
+    BACK3 --> supervisor
+    
+    subgraph reporting[" REPORTING NODE "]
+        direction TB
+        REP1["Collect Metrics<br/>━━━━━━━━━━━━━━━<br/>Total logs ingested<br/>Red actions count<br/>Blue alerts count"]
+        REP2["Build Summary Report<br/>with Timeline"]
+        REP3["List All Attacker Actions"]
+        REP4["List All Defender Alerts<br/>with Severity"]
+        REP5["Append Report to<br/>conversation_history"]
+        REP6["Set done = True"]
+        REP7["Set supervisor_decision<br/>= 'done'"]
+        
+        REP1 --> REP2 --> REP3 --> REP4 --> REP5 --> REP6 --> REP7
+    end
+    
+    reporting --> END([END])
+    
+    style START fill:#90EE90,stroke:#333,stroke-width:3px
+    style END fill:#FF6B6B,stroke:#333,stroke-width:3px
+    style INIT fill:#E8F5E9,stroke:#333,stroke-width:2px
+    style supervisor fill:#FFF3E0,stroke:#FF9800,stroke-width:3px
+    style ingest_logs fill:#E3F2FD,stroke:#2196F3,stroke-width:3px
+    style red_agent fill:#FFEBEE,stroke:#F44336,stroke-width:3px
+    style blue_agent fill:#E8EAF6,stroke:#3F51B5,stroke-width:3px
+    style reporting fill:#F3E5F5,stroke:#9C27B0,stroke-width:3px
+    
+    style SDONE fill:#FFD700
+    style SINGEST fill:#87CEEB
+    style SRED fill:#FF6B6B
+    style SBLUE fill:#6B9AFF
+    
+    style BACK1 fill:#DDD,stroke:#666,stroke-width:2px
+    style BACK2 fill:#DDD,stroke:#666,stroke-width:2px
+    style BACK3 fill:#DDD,stroke:#666,stroke-width:2px
